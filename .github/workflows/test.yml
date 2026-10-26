@@ -1,0 +1,49 @@
+name: Test
+
+# Nightly: catches upstream changes (PaperMC, Mojang, Forge, Bedrock, ...) before a server owner does.
+# Tag v*: runs the same tests, then publishes the release that servers self-update from.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint
+        run: docker run --rm -v "$PWD/src:/src:ro" koalaman/shellcheck:stable -S warning /src/eggactyl.sh /src/install.sh
+      - name: Build egg
+        run: python3 build.py
+      - name: Run every server type in the Wings simulator
+        run: bash test/run-all.sh
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-logs
+          path: test/logs/
+
+  release:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the tag matches EGGACTYL_VERSION
+        run: |
+          v=$(sed -n 's/^EGGACTYL_VERSION=//p' src/eggactyl.sh)
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "::error::Tag $GITHUB_REF_NAME does not match EGGACTYL_VERSION=$v"; exit 1; }
+      - name: Build egg
+        run: python3 build.py
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" src/eggactyl.sh egg-eggactyl-v2.json --title "Eggactyl $GITHUB_REF_NAME" --generate-notes
