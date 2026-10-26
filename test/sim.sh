@@ -42,7 +42,7 @@ start=$SECONDS ready=
 while [ $((SECONDS - start)) -lt "$TIMEOUT" ]; do
     sleep 3
     grep -qE "$READY" "$LOG" && { ready=$((SECONDS - start)); break; }
-    [ $((SECONDS - start)) -gt 10 ] && [ "$(docker inspect -f '{{.State.Running}}' "$C" 2>/dev/null)" != true ] && break
+    [ "$(docker inspect -f '{{.State.Status}}' "$C" 2>/dev/null)" = exited ] && break
 done
 [ -n "$HOLD" ] && [ -n "$ready" ] && sleep "$HOLD"
 state=$(docker inspect -f 'exit code {{.State.ExitCode}}, OOM-killed {{.State.OOMKilled}}' "$C" 2>/dev/null)

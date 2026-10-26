@@ -12,6 +12,9 @@ cleanup() { docker rm -f eggtest-updsrv >/dev/null 2>&1; docker network rm eggte
             docker volume ls -q | grep '^eggtest-' | xargs -r docker volume rm >/dev/null 2>&1; }
 trap cleanup EXIT
 
+# Pull images up front so parallel tests don't race the download.
+for img in ghcr.io/parkervcp/yolks:debian debian:trixie-slim busybox:stable; do docker pull -q "$img" >/dev/null || exit 1; done
+
 # Fixtures: any runnable jar works for the custom Java type; a launcher with a higher version for self-update.
 curl -fsSL -o logs/seed-java/app.jar https://ci.md-5.net/job/BungeeCord/lastSuccessfulBuild/artifact/bootstrap/target/BungeeCord.jar \
     || { echo "Could not download the test jar"; exit 1; }
