@@ -37,6 +37,7 @@ fi
     -e P_SERVER_LOCATION=test -e P_SERVER_UUID=test -e TZ=UTC -e AUTO_UPDATE=1 -e PYTHON_VERSION=3.13 \
     -e QUERY_PORT=10011 -e FILE_PORT=30033 -e SERVER_TYPE=menu -e SERVER_VERSION=latest -e LAUNCHER_UPDATE=0 \
     "${EXTRA[@]}" ghcr.io/parkervcp/yolks:debian > "$LOG" 2>&1 &
+client=$!
 
 start=$SECONDS ready=
 while [ $((SECONDS - start)) -lt "$TIMEOUT" ]; do
@@ -49,10 +50,13 @@ state=$(docker inspect -f 'exit code {{.State.ExitCode}}, OOM-killed {{.State.OO
 docker kill -s INT "$C" >/dev/null 2>&1
 for _ in $(seq 1 60); do [ "$(docker inspect -f '{{.State.Running}}' "$C" 2>/dev/null)" = true ] || break; sleep 1; done
 running=$(docker inspect -f '{{.State.Running}}' "$C" 2>/dev/null)
+final=$(docker inspect -f 'exit code {{.State.ExitCode}}, OOM-killed {{.State.OOMKilled}}' "$C" 2>/dev/null)
+# Let docker finish writing the container's last output before reading the log.
+for _ in $(seq 1 15); do kill -0 "$client" 2>/dev/null || break; sleep 1; done
 docker rm -f "$C" >/dev/null 2>&1
 sed 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$LOG" | tr -d '\r' > "$LOG.txt"
 
 [ -n "$ready" ] || fail "never printed /$READY/ (container: $state; timeout ${TIMEOUT}s)"
 [ "$running" = true ] && fail "did not stop within 60s of SIGINT"
-[ -n "$EXPECT" ] && ! grep -qE "$EXPECT" "$LOG.txt" && fail "log is missing /$EXPECT/"
+[ -n "$EXPECT" ] && ! grep -qE "$EXPECT" "$LOG.txt" && fail "log is missing /$EXPECT/ (container: $final)"
 echo "PASS ${LABEL:-$NAME} (ready in ${ready}s)"
