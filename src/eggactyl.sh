@@ -3,7 +3,7 @@
 # and run on every server start. Updates itself from the latest GitHub release when it can,
 # but never needs GitHub (or anything except the official download sources) to start.
 
-EGGACTYL_VERSION=2.0.1
+EGGACTYL_VERSION=2.0.2
 UPDATE_URL=${EGGACTYL_UPDATE_URL:-https://github.com/ExecSam/Eggactyl-V2/releases/latest/download/eggactyl.sh}
 
 cd /home/container || exit 1
@@ -99,9 +99,14 @@ ensure_java() {
 }
 
 jvm_flags() {
-    local extra; read -ra extra <<< "$JAVA_ARGUMENTS"
+    # Heap = the server's allocation minus room for the JVM's own memory (10%, 128 MB - 1 GB).
+    # Wings only adds 5-15% on top of the allocation, so sizing from the container limit gets OOM-killed.
+    local extra reserve mem=${SERVER_MEMORY:-0}; read -ra extra <<< "$JAVA_ARGUMENTS"
     JFLAGS=(-Xms128M)
-    [[ "$JAVA_ARGUMENTS" == *-Xmx* || "$JAVA_ARGUMENTS" == *MaxRAM* ]] || JFLAGS+=(-XX:MaxRAMPercentage=95.0)
+    if [[ "$JAVA_ARGUMENTS" != *-Xmx* && "$JAVA_ARGUMENTS" != *MaxRAM* ]] && [ "$mem" -gt 0 ] 2>/dev/null; then
+        reserve=$((mem / 10)); [ "$reserve" -lt 128 ] && reserve=128; [ "$reserve" -gt 1024 ] && reserve=1024
+        JFLAGS+=("-Xmx$((mem - reserve))M")
+    fi
     JFLAGS+=("${extra[@]}" -Dterminal.jline=false -Dterminal.ansi=true)
 }
 

@@ -73,7 +73,7 @@ The GitHub Action runs the full test suite. Only if every test passes does it pu
 | Python Version | Python | Any version uv can install (default 3.13) |
 | Node.js Version | Node.js | `22`, `24.1.0`, … blank = latest LTS |
 | Java Version | Java types | Blank = picked automatically from the Minecraft version, Paper's API, or 21 |
-| Java Arguments | Java types | Appended to the defaults. Memory defaults to 95% of the server's limit unless you pass `-Xmx` |
+| Java Arguments | Java types | Appended to the defaults. Heap defaults to the server's memory minus 10% (128 MB–1 GB) for the JVM itself, unless you pass `-Xmx` |
 | Query Port / File Port | TeamSpeak 3 | Add these as extra allocations on the server |
 | Eggactyl Self-Update (`LAUNCHER_UPDATE`) | all | Admin-only. `0` freezes the launcher on that server |
 

@@ -102,7 +102,7 @@ egg = {
             "Force a Java version (8, 11, 17, 21, 25). Blank = automatic for the chosen server.",
             rules="nullable|regex:/^[0-9]{1,2}$/"),
         var("Java Arguments", "JAVA_ARGUMENTS",
-            "Extra JVM flags. Memory is set automatically from the server's limit unless you pass -Xmx.",
+            "Extra JVM flags. Heap defaults to the server's memory minus 10% (128 MB-1 GB) for the JVM itself, unless you pass -Xmx.",
             rules="nullable|string|max:2000"),
         var("Query Port", "QUERY_PORT", "TeamSpeak 3 ServerQuery port (must be an allocation on this server).",
             default="10011", rules="nullable|integer|between:1,65535"),
