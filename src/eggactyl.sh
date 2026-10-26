@@ -3,7 +3,7 @@
 # and run on every server start. Updates itself from the latest GitHub release when it can,
 # but never needs GitHub (or anything except the official download sources) to start.
 
-EGGACTYL_VERSION=2.0.0
+EGGACTYL_VERSION=2.0.1
 UPDATE_URL=${EGGACTYL_UPDATE_URL:-https://github.com/ExecSam/Eggactyl-V2/releases/latest/download/eggactyl.sh}
 
 cd /home/container || exit 1

@@ -1,10 +1,13 @@
 """Build egg-eggactyl-v2.json from src/. Run: python build.py"""
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).parent
 MAX_SCRIPT = 65535  # Pterodactyl stores the install script in a MySQL TEXT column
+# The panel's egg form rejects image lines that don't match this (import doesn't check, saving does).
+DOCKER_IMAGE_LINE = re.compile(r"[\w#./\- ]*\|?~?[\w./\-:@ ]*")
 
 
 TYPES = "paper,purpur,fabric,forge,neoforge,vanilla,velocity,bungeecord,bedrock,python,nodejs,java,teamspeak,lavalink"
@@ -47,12 +50,12 @@ egg = {
     "author": "mail@samjackaman.dev",
     "description": (
         "Multi-egg: pick what the server runs from the console on first start. "
-        "Minecraft Java (Paper, Purpur, Fabric, Forge, NeoForge, Vanilla), proxies (Velocity, Waterfall, BungeeCord), "
+        "Minecraft Java (Paper, Purpur, Fabric, Forge, NeoForge, Vanilla), proxies (Velocity, BungeeCord), "
         "Bedrock, Python and Node.js bots, custom Java apps, TeamSpeak 3 and Lavalink. "
         "Or set Server Type in the Startup tab to skip the menu."
     ),
     "features": ["eula"],
-    "docker_images": {"Eggactyl V2 (Debian)": "ghcr.io/parkervcp/yolks:debian"},
+    "docker_images": {"Eggactyl V2": "ghcr.io/parkervcp/yolks:debian"},
     "file_denylist": [],
     "startup": "bash .eggactyl/eggactyl.sh",
     "config": {
@@ -111,6 +114,9 @@ egg = {
             default="1", rules="required|boolean", editable=False),
     ],
 }
+
+for label, image in egg["docker_images"].items():
+    assert DOCKER_IMAGE_LINE.fullmatch(f"{label}|{image}"), f"panel will reject docker image line '{label}|{image}'"
 
 out = ROOT / "egg-eggactyl-v2.json"
 out.write_text(json.dumps(egg, indent=4) + "\n", encoding="utf-8", newline="\n")
