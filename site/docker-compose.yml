@@ -1,0 +1,19 @@
+# Eggactyl website. Put ADMIN_PASSWORD (and optionally GITHUB_TOKEN) in a .env file next to this one.
+services:
+  eggactyl-site:
+    build: .
+    image: eggactyl-site:latest
+    container_name: eggactyl-site
+    restart: unless-stopped
+    init: true
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+      PUBLIC_URL: ${PUBLIC_URL:-https://eggactyl.dev}
+    ports:
+      - "127.0.0.1:${PORT:-3447}:3000"
+    volumes:
+      - eggactyl-site-data:/data
+
+volumes:
+  eggactyl-site-data:
